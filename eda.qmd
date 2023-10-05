@@ -1,0 +1,169 @@
+---
+title: "R Exploratory Data Analysis"
+author: DAPT 621 Intro to R
+format:
+  html: 
+    self-contained: true
+toc: true
+toc-location: left
+theme: pulse
+filters:
+  - webr
+---
+
+## Business Scenario
+
+Suppose you are a data consultant recently hired by Company ABC, a mid-size company with 119 employees, to advise on global compensation for analytics positions throughout the company. Currently, the company has three offices: one in Columbus, Ohio, one in Toronto, Canada, and another in Munich, Germany and is shifting from a partially remote set-up to a fully remote one. Company ABC was able to obtain a listing of 607 salaries over 3 years on various technical positions from around the world to use as a benchmark and would like to understand what salaries look like in different locations.
+
+## Data Overview
+
+| Column             | Description                                                                                                                                                                                    |
+|--------------------|----------------------------------------------------|
+| work_year          | The year the salary was paid.                                                                                                                                                                  |
+| experience_level   | The experience level in the job during the year with the following possible values: EN Entry-level / Junior MI Mid-level / Intermediate SE Senior-level / Expert EX Executive-level / Director |
+| employment_type    | The type of employment for the role: PT Part-time FT Full-time CT Contract FL Freelance                                                                                                        |
+| job_title          | The role worked in during the year.                                                                                                                                                            |
+| salary             | The total gross salary amount paid.                                                                                                                                                            |
+| salary_currency    | The currency of the salary paid as an ISO 4217 currency code.                                                                                                                                  |
+| salary_in_usd      | The salary in USD (FX rate divided by avg. USD rate for the respective year via fxdata.foorilla.com).                                                                                          |
+| employee_residence | Employee's primary country of residence in during the work year as an ISO 3166 country code.                                                                                                   |
+| remote_ratio       | The overall amount of work done remotely, possible values are as follows: 0 No remote work (less than 20%) 50 Partially remote 100 Fully remote (more than 80%)                                |
+| company_location   | The country of the employer's main office or contracting branch as an ISO 3166 country code.                                                                                                   |
+| company_size       | The average number of people that worked for the company during the year: S less than 50 employees (small) M 50 to 250 employees (medium) L more than 250 employees (large)                    |
+
+## Read CSV Data into R
+
+### read.csv
+
+`read.csv` is a base R package (or actually a wrapper around the `read.table` package) specific for reading in comma delimited files. Remember, you can always type `?` before the function to see the function's description and usage.
+
+``` r
+?read.csv
+```
+
+Let's read in our sample data *ds_salaries.csv* and take a look at the first 5 rows using the `head()` function.
+
+```{webr-r}
+filename <- 'https://danadbm.github.io/r-wrangle/ds_salaries.csv'
+sal <- read.csv(filename)
+```
+
+### head
+
+Notice that 5 rows are returned if no number of rows is specified. Try `head(sal, 10)` to see the first 10 rows.
+
+```{webr-r}
+head(sal, 2)
+```
+
+### tail
+
+Check the last 5 rows of the data with the `tail()` function.
+
+```{webr-r}
+tail(sal)
+```
+
+## Explore the data frame
+
+### str
+
+Check the structure of our data object with the `str` function.
+
+```{webr-r}
+str(sal)
+```
+
+### dim, ncol, nrow
+
+For a quick return of the dimensions, `dim`, `ncol`, and `nrow` can be used on the data frame.
+
+```{webr-r}
+dim(sal)
+ncol(sal)
+nrow(sal)
+```
+
+### summary
+
+Use the `summary` function to see summary statistics for each column.
+
+```{webr-r}
+summary(sal)
+```
+
+## Check NAs
+
+```{webr-r}
+nas <- sal[is.na(sal$salary_in_usd) ,]
+```
+
+## Select
+
+View columns in the `sal` data.
+
+```{webr-r}
+names(sal)
+```
+
+Select the `salary` column (base R).
+
+```{webr-r}
+sal[, c('salary')]
+```
+
+Select the salary using the `select()` function in the `dplyr` package.
+
+```{webr-r}
+library(tidyverse)
+select(sal, salary)
+```
+
+Use piping to select the `salary` column.
+
+```{webr-r}
+sal %>% select(salary)
+```
+
+All functions below now come from the `dplyr` package which can be installed either separately of through the `tidyverse` set of packages.
+
+## Filter
+
+Filter on salaries equal to 4000.
+
+*Tip: To add multiple filter conditions separate with `&` for requiring both conditions to be met or `|` to require at least one of the conditions to be met.*
+
+```{webr-r}
+sal %>% filter(salary == 4000)
+
+```
+
+## Summarize (and Arrange)
+
+Use `summarize()` (or `summarise`) to create aggregate variables. If you'd like summaries to be grouped by other variables, first specify these variables with the `group_by` statement.
+
+Use `arrange()` to order the data by a variable in either ascending or descending order.
+
+```{webr-r}
+sal %>% 
+    group_by(salary_currency) %>% 
+    summarise(
+        count = n(),
+        avg_salary = mean(salary)
+    ) %>% 
+    arrange(desc(count))
+```
+
+## Mutate
+
+`mutate()` adds another column to the data. Unlike `summarise()`, it does not aggregate the data, but rather creates a new column with the same number of rows as the data.
+
+```{webr-r}
+sal %>% 
+    mutate(
+        NA_or_not = ifelse(is.na(salary_in_usd),"Yes", "No")
+    ) %>% 
+    select(salary_in_usd, NA_or_not)
+            
+            
+```
