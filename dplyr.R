@@ -1,0 +1,268 @@
+# ---
+# R Data Wrangling: dplyr
+# DAPT 621 Intro to R
+# ---
+#
+# # Business Scenario
+#
+# Suppose you are a data consultant recently hired by Company ABC, a mid-size company with 119 employees, to advise on global compensation for analytics positions throughout the company. Currently, the company has three offices: one in Columbus, Ohio, one in Toronto, Canada, and another in Munich, Germany and is shifting from a partially remote set-up to a fully remote one. Company ABC was able to obtain a listing of 607 salaries over 3 years on various technical positions from around the world to use as a benchmark and would like to understand what salaries look like in different locations.
+#
+# # Data Overview
+#
+# | Column             | Description                                                                                                                                                                                    |
+# |-----------------------|-------------------------------------------------|
+# | work_year          | The year the salary was paid.                                                                                                                                                                  |
+# | experience_level   | The experience level in the job during the year with the following possible values: EN Entry-level / Junior MI Mid-level / Intermediate SE Senior-level / Expert EX Executive-level / Director |
+# | employment_type    | The type of employment for the role: PT Part-time FT Full-time CT Contract FL Freelance                                                                                                        |
+# | job_title          | The role worked in during the year.                                                                                                                                                            |
+# | salary             | The total gross salary amount paid.                                                                                                                                                            |
+# | salary_currency    | The currency of the salary paid as an ISO 4217 currency code.                                                                                                                                  |
+# | salary_in_usd      | The salary in USD (FX rate divided by avg. USD rate for the respective year via fxdata.foorilla.com).                                                                                          |
+# | employee_residence | Employee's primary country of residence in during the work year as an ISO 3166 country code.                                                                                                   |
+# | remote_ratio       | The overall amount of work done remotely, possible values are as follows: 0 No remote work (less than 20%) 50 Partially remote 100 Fully remote (more than 80%)                                |
+# | company_location   | The country of the employer's main office or contracting branch as an ISO 3166 country code.                                                                                                   |
+# | company_size       | The average number of people that worked for the company during the year: S less than 50 employees (small) M 50 to 250 employees (medium) L more than 250 employees (large)                    |
+#
+# # Read CSV Data into R
+#
+# Let's read in our sample data *ds_salaries.csv* into a data frame, `sal`, and, again, subset the data. This time we'll save a data frame, `salsub` that is the first 30 rows of the data frame, `sal`.
+#
+#
+
+filepath <- 'https://danadbm.github.io/r-wrangle/ds_salaries.csv'
+sal <- read.csv(filepath)
+
+#
+#
+#
+
+salsub <- sal[1:30, ]
+
+#
+#
+# # Load the `dplyr` package
+#
+# If `dplyr` is not installed, first install with the code `install.packages('dplyr')`.
+#
+#
+
+library(dplyr)
+
+#
+#
+#
+# # Select
+#
+# Select the salary using the `select()` function in the `dplyr` package. Note that columns can be specified without the `$` that's needed in base R syntax. 
+#
+#
+
+select(salsub, salary)
+
+#
+#
+# Use piping (`%>%`) to select the `salary` column. Piping will take the first argument (which is a data frame) and "pipe" it into the function.
+#
+# *TIP: Use the keys `Ctrl` + `Shift` + `M` to create the pipe, `%>%`*
+#
+#
+
+salsub %>% select(salary)
+
+#
+#
+# # Exercise
+#
+# Select the `work_year`, `experience_level`, `salary_currency`, and `salary` columns.
+#
+#
+
+# insert code here
+
+#
+#
+# Select the `work_year`, `experience_level`, `salary_currency`, and `salary` columns and then show only the first 5 rows.
+#
+#
+
+# insert code here
+
+#
+#
+# # Filter
+#
+# Filter the data with the criteria, `company_location` is equal to `US`, using the `filter()` function in the `dplyr` package.
+#
+# Without piping:
+#
+
+filter(salsub, company_location == 'US')
+
+#
+#
+# With piping:
+#
+
+salsub %>% filter(company_location == 'US')
+
+#
+#
+# Change the filter to include company locations of either `US` or `AU` using the `%in%` function.
+#
+#
+
+salsub %>% filter(company_location %in% c('US', 'AU'))
+
+#
+#
+# *Tip: To add multiple filter conditions separate with `&` for requiring both conditions to be met or `|` to require at least one of the conditions to be met.*
+#
+# # Exercise
+#
+# Filter the data to show rows where `experience_level` is equal to senior level **AND** `salary_in_usd` is greater than $100k.
+#
+#
+
+# insert code here
+
+#
+#
+# Filter the data to show rows where `experience_level` is equal to senior level **OR** `salary_in_usd` is greater than $100k.
+#
+#
+
+# insert code here
+
+#
+#
+# Filter the data to show the rows where `salary_in_usd` is blank (i.e. is `NA`).
+#
+#
+
+# insert code here
+
+#
+#
+# # Arrange
+#
+# Use `arrange()` to order the data by a variable in either ascending or descending order.
+#
+# Ascending:
+#
+
+salsub %>% arrange(salary)
+
+#
+#
+# Descending:
+#
+
+salsub %>% arrange(desc(salary))
+
+#
+#
+# # Exercise
+#
+# Filter the data where `salary_currency` is equal to `USD`, arrange `salary` in descending order, and select only the `work_year`, `job_title`, `salary` columns.
+#
+#
+
+# insert code here
+
+#
+#
+#
+# # Mutate
+#
+# `mutate()` adds another column to the data. 
+#
+# Make a copy of another column.
+#
+
+salsub %>% mutate(work_year_copy = work_year) %>% head()
+
+#
+#
+# Create a new column based on an if/else statement.
+#
+
+salsub %>% 
+    mutate(
+        NA_or_not = ifelse(is.na(salary_in_usd), "Yes", "No")
+    ) %>% 
+    select(salary_in_usd, NA_or_not)
+
+#
+#
+# Create a new column based on a case when statement.
+#
+
+salsub %>% 
+    mutate(
+        job_group = case_when(
+            job_title %in% c('Data Scientist', 'Lead Data Scientist') ~ 'Data Scientist',
+            job_title %in% c('Data Analyst') ~ job_title,
+            TRUE ~ 'All Other'
+        )
+    ) %>% select(job_title, job_group)
+
+#
+#
+# # Exercise
+#
+# Create a new column, `USD_or_not`, that shows "Yes" if `salary_currency` is equal to `USD` and "No" for all other currencies. 
+#
+#
+
+# insert code here
+
+#
+#
+#
+# # Summarize
+#
+# Use `summarize()` (or `summarise`) to create aggregate variables. If you'd like summaries to be grouped by other variables, first specify these variables with the `group_by` statement.
+#
+# Let's find the average `salary_in_usd` across our full dataset, `sal`.
+#
+
+sal %>% summarise(
+    avg_salary = mean(salary_in_usd)
+)
+
+#
+#
+# Let's try again making sure we account for `NA`s.
+#
+
+sal %>% summarise(
+    avg_salary = mean(salary_in_usd, na.rm = TRUE)
+)
+
+#
+#
+#
+# Let's look at the average salaries for each currency and the number of rows in each. 
+#
+#
+
+sal %>% 
+    group_by(salary_currency) %>% 
+    summarise(
+        count = n(),
+        avg_salary = mean(salary)
+    ) %>% 
+    arrange(desc(avg_salary))
+
+#
+#
+# # Exercise
+#
+# Find the average salary using the `sal` dataset where `salary_currency` is equal to `USD` and grouping by `work_year`.
+#
+#
+
+# insert code here
+
+#
+#

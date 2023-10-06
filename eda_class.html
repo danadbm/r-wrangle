@@ -3190,6 +3190,7 @@ opacity: .65
   <li><a href="#dim-ncol-nrow" id="toc-dim-ncol-nrow" class="nav-link" data-scroll-target="#dim-ncol-nrow">dim, ncol, nrow</a></li>
   <li><a href="#str" id="toc-str" class="nav-link" data-scroll-target="#str">str</a></li>
   <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">summary</a></li>
+  <li><a href="#names" id="toc-names" class="nav-link" data-scroll-target="#names">names</a></li>
   </ul></li>
   <li><a href="#access-elements-in-the-data-frame-df-using-base-r" id="toc-access-elements-in-the-data-frame-df-using-base-r" class="nav-link" data-scroll-target="#access-elements-in-the-data-frame-df-using-base-r">Access elements in the data frame (<code>df</code>) using base R</a>
   <ul class="collapse">
@@ -3548,7 +3549,7 @@ sal <- read.csv(filepath)`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `head(sal, 2)`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -3756,7 +3757,7 @@ sal <- read.csv(filepath)`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `tail(sal)`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -3974,7 +3975,7 @@ sal <- read.csv(filepath)`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `dim(sal)`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -4178,7 +4179,7 @@ sal <- read.csv(filepath)`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `ncol(sal)`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -4382,7 +4383,7 @@ sal <- read.csv(filepath)`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `nrow(sal)`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -4590,7 +4591,7 @@ sal <- read.csv(filepath)`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `str(sal)`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -4798,7 +4799,215 @@ sal <- read.csv(filepath)`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `summary(sal)`,
+      value: ``,
+      language: 'r',
+      theme: 'vs-light',
+      automaticLayout: true,           // TODO: Could be problematic for slide decks
+      scrollBeyondLastLine: false,
+      minimap: {
+        enabled: false
+      },
+      fontSize: '17.5rem',               // Bootstrap is 1 rem
+      renderLineHighlight: "none",     // Disable current line highlighting
+      hideCursorInOverviewRuler: true  // Remove cursor indictor in right hand side scroll bar
+    });
+
+    // Dynamically modify the height of the editor window if new lines are added.
+    let ignoreEvent = false;
+    const updateHeight = () => {
+      const contentHeight = editor.getContentHeight();
+      // We're avoiding a width change
+      //editorDiv.style.width = `${width}px`;
+      editorDiv.style.height = `${contentHeight}px`;
+      try {
+        ignoreEvent = true;
+
+        // The key to resizing is this call
+        editor.layout();
+      } finally {
+        ignoreEvent = false;
+      }
+    };
+
+    // Helper function to check if selected text is empty
+    function isEmptyCodeText(selectedCodeText) {
+      return (selectedCodeText === null || selectedCodeText === undefined || selectedCodeText === "");
+    }
+
+    // Registry of keyboard shortcuts that should be re-added to each editor window
+    // when focus changes.
+    const addWebRKeyboardShortCutCommands = () => {
+      // Add a keydown event listener for Shift+Enter to run all code in cell
+      editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => {
+
+        // Retrieve all text inside the editor
+        executeCode(editor.getValue());
+      });
+
+      // Add a keydown event listener for CMD/Ctrl+Enter to run selected code
+      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+
+        // Get the selected text from the editor
+        const selectedText = editor.getModel().getValueInRange(editor.getSelection());
+        // Check if no code is selected
+        if (isEmptyCodeText(selectedText)) {
+          // Obtain the current cursor position
+          let currentPosition = editor.getPosition();
+          // Retrieve the current line content
+          let currentLine = editor.getModel().getLineContent(currentPosition.lineNumber);
+
+          // Propose a new position to move the cursor to
+          let newPosition = new monaco.Position(currentPosition.lineNumber + 1, 1);
+
+          // Check if the new position is beyond the last line of the editor
+          if (newPosition.lineNumber > editor.getModel().getLineCount()) {
+            // Add a new line at the end of the editor
+            editor.executeEdits("addNewLine", [{
+            range: new monaco.Range(newPosition.lineNumber, 1, newPosition.lineNumber, 1),
+            text: "\n", 
+            forceMoveMarkers: true,
+            }]);
+          }
+          
+          // Run the entire line of code.
+          executeCode(currentLine);
+
+          // Move cursor to new position
+          editor.setPosition(newPosition);
+        } else {
+          // Code to run when Ctrl+Enter is pressed with selected code
+          executeCode(selectedText);
+        }
+      });
+    }
+
+    // Register an on focus event handler for when a code cell is selected to update
+    // what keyboard shortcut commands should work.
+    // This is a workaround to fix a regression that happened with multiple
+    // editor windows since Monaco 0.32.0 
+    // https://github.com/microsoft/monaco-editor/issues/2947
+    editor.onDidFocusEditorText(addWebRKeyboardShortCutCommands);
+
+    // Register an on change event for when new code is added to the editor window
+    editor.onDidContentSizeChange(updateHeight);
+
+    // Manually re-update height to account for the content we inserted into the call
+    updateHeight();
+  });
+
+  // Function to execute the code (accepts code as an argument)
+  async function executeCode(codeToRun) {
+    // Disable run button for code cell active
+    runButton.disabled = true;
+
+    // Create a canvas variable for graphics
+    let canvas = undefined;
+
+    // Initialize webR
+    await globalThis.webR.init();
+
+    // Setup a webR canvas by making a namespace call into the {webr} package
+    await webR.evalRVoid("webr::canvas(width=504, height=360)");
+
+    // Capture output data from evaluating the code
+    const result = await webRCodeShelter.captureR(codeToRun, {
+      withAutoprint: true,
+      captureStreams: true,
+      captureConditions: false//,
+      // env: webR.objs.emptyEnv, // maintain a global environment for webR v0.2.0
+    });
+
+    // Start attempting to parse the result data
+    try {
+
+      // Stop creating images
+      await webR.evalRVoid("dev.off()");
+
+      // Merge output streams of STDOUT and STDErr (messages and errors are combined.)
+      const out = result.output.filter(
+        evt => evt.type == "stdout" || evt.type == "stderr"
+      ).map((evt) => evt.data).join("\n");
+
+      // Clean the state
+      const msgs = await webR.flush();
+
+      // Output each image stored
+      msgs.forEach(msg => {
+        // Determine if old canvas can be used or a new canvas is required.
+        if (msg.type === 'canvas'){
+          // Add image to the current canvas
+          if (msg.data.event === 'canvasImage') {
+            canvas.getContext('2d').drawImage(msg.data.image, 0, 0);
+          } else if (msg.data.event === 'canvasNewPage') {
+            // Generate a new canvas element
+            canvas = document.createElement("canvas");
+            canvas.setAttribute("width", 2 * 504);
+            canvas.setAttribute("height", 2 * 360);
+            canvas.style.width = "700px";
+            canvas.style.display = "block";
+            canvas.style.margin = "auto";
+          }
+        }
+      });
+
+      // Nullify the outputDiv of content
+      outputDiv.innerHTML = "";
+
+      // Design an output object for messages
+      const pre = document.createElement("pre");
+      if (/\S/.test(out)) {
+        // Display results as text
+        const code = document.createElement("code");
+        code.innerText = out;
+        pre.appendChild(code);
+      } else {
+        // If nothing is present, hide the element.
+        pre.style.visibility = "hidden";
+      }
+      outputDiv.appendChild(pre);
+
+      // Place the graphics on the canvas
+      if (canvas) {
+        const p = document.createElement("p");
+        p.appendChild(canvas);
+        outputDiv.appendChild(p);
+      }
+    } finally {
+      // Clean up the remaining code
+      webRCodeShelter.purge();
+      runButton.disabled = false;
+    }
+  }
+
+  // Add a click event listener to the run button
+  runButton.onclick = function () {
+    executeCode(editor.getValue());
+  };
+</script>
+</section>
+<section id="names" class="level3">
+<h3 class="anchored" data-anchor-id="names">names</h3>
+<p>Use the <code>names</code> function to see the column names in the data frame.</p>
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-9">Loading
+  webR...</button>
+<div id="webr-editor-9"></div>
+<div id="webr-code-output-9" aria-live="assertive">
+  <pre style="visibility: hidden"></pre>
+</div>
+<script type="module">
+  // Retrieve webR code cell information
+  const runButton = document.getElementById("webr-run-button-9");
+  const outputDiv = document.getElementById("webr-code-output-9");
+  const editorDiv = document.getElementById("webr-editor-9");
+
+  // Add a light grey outline around the code editor
+  editorDiv.style.border = "1px solid #eee";
+
+  // Load the Monaco Editor and create an instance
+  let editor;
+  require(['vs/editor/editor.main'], function () {
+    editor = monaco.editor.create(editorDiv, {
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -4990,17 +5199,17 @@ sal <- read.csv(filepath)`,
 <p>It is good to understand how data can be accessed in a data frame using base R syntax; however, it is more common to use libraries like <code>dplyr</code> and <code>data.table</code>. <code>dplyr</code> will be the focus after reviewing base R syntax.</p>
 <p><strong>For the purposes of this demo, we will look at only a subset of the original data and focus on Canadian employees only (<code>employee_residence == &#39;CA&#39;</code>).</strong></p>
 <p>The code <code>sal_ca &lt;- sal[sal$employee_residence == &#39;CA&#39;, ]</code> will create a new data frame, <code>sal_ca</code> that is limited to the Canadian employees.</p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-9">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-10">Loading
   webR...</button>
-<div id="webr-editor-9"></div>
-<div id="webr-code-output-9" aria-live="assertive">
+<div id="webr-editor-10"></div>
+<div id="webr-code-output-10" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-9");
-  const outputDiv = document.getElementById("webr-code-output-9");
-  const editorDiv = document.getElementById("webr-editor-9");
+  const runButton = document.getElementById("webr-run-button-10");
+  const outputDiv = document.getElementById("webr-code-output-10");
+  const editorDiv = document.getElementById("webr-editor-10");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -5199,17 +5408,17 @@ sal <- read.csv(filepath)`,
 <p><em>Each of these options will return a single column as a vector.</em></p>
 <p>Select a column by name.</p>
 <p><code>df$columnname</code></p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-10">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-11">Loading
   webR...</button>
-<div id="webr-editor-10"></div>
-<div id="webr-code-output-10" aria-live="assertive">
+<div id="webr-editor-11"></div>
+<div id="webr-code-output-11" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-10");
-  const outputDiv = document.getElementById("webr-code-output-10");
-  const editorDiv = document.getElementById("webr-editor-10");
+  const runButton = document.getElementById("webr-run-button-11");
+  const outputDiv = document.getElementById("webr-code-output-11");
+  const editorDiv = document.getElementById("webr-editor-11");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -5218,7 +5427,7 @@ sal <- read.csv(filepath)`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca$salary`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -5404,17 +5613,17 @@ sal <- read.csv(filepath)`,
   };
 </script>
 <p><code>df[[&quot;column name&quot;]]</code></p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-11">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-12">Loading
   webR...</button>
-<div id="webr-editor-11"></div>
-<div id="webr-code-output-11" aria-live="assertive">
+<div id="webr-editor-12"></div>
+<div id="webr-code-output-12" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-11");
-  const outputDiv = document.getElementById("webr-code-output-11");
-  const editorDiv = document.getElementById("webr-editor-11");
+  const runButton = document.getElementById("webr-run-button-12");
+  const outputDiv = document.getElementById("webr-code-output-12");
+  const editorDiv = document.getElementById("webr-editor-12");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -5423,9 +5632,7 @@ sal <- read.csv(filepath)`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `# single or double quotes can be used
-# salary[['salary']]
-sal_ca[["salary"]]`,
+      value: `# single or double quotes can be used`,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -5611,17 +5818,17 @@ sal_ca[["salary"]]`,
   };
 </script>
 <p><code>df[ , &quot;column name&quot;]</code></p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-12">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-13">Loading
   webR...</button>
-<div id="webr-editor-12"></div>
-<div id="webr-code-output-12" aria-live="assertive">
+<div id="webr-editor-13"></div>
+<div id="webr-code-output-13" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-12");
-  const outputDiv = document.getElementById("webr-code-output-12");
-  const editorDiv = document.getElementById("webr-editor-12");
+  const runButton = document.getElementById("webr-run-button-13");
+  const outputDiv = document.getElementById("webr-code-output-13");
+  const editorDiv = document.getElementById("webr-editor-13");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -5630,7 +5837,7 @@ sal_ca[["salary"]]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[ , "salary"]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -5817,17 +6024,17 @@ sal_ca[["salary"]]`,
 </script>
 <p>Select a column by position.</p>
 <p><code>df[[column number]]</code></p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-13">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-14">Loading
   webR...</button>
-<div id="webr-editor-13"></div>
-<div id="webr-code-output-13" aria-live="assertive">
+<div id="webr-editor-14"></div>
+<div id="webr-code-output-14" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-13");
-  const outputDiv = document.getElementById("webr-code-output-13");
-  const editorDiv = document.getElementById("webr-editor-13");
+  const runButton = document.getElementById("webr-run-button-14");
+  const outputDiv = document.getElementById("webr-code-output-14");
+  const editorDiv = document.getElementById("webr-editor-14");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -5836,7 +6043,7 @@ sal_ca[["salary"]]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[[5]]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -6022,17 +6229,17 @@ sal_ca[["salary"]]`,
   };
 </script>
 <p><code>df[ , column number]</code></p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-14">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-15">Loading
   webR...</button>
-<div id="webr-editor-14"></div>
-<div id="webr-code-output-14" aria-live="assertive">
+<div id="webr-editor-15"></div>
+<div id="webr-code-output-15" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-14");
-  const outputDiv = document.getElementById("webr-code-output-14");
-  const editorDiv = document.getElementById("webr-editor-14");
+  const runButton = document.getElementById("webr-run-button-15");
+  const outputDiv = document.getElementById("webr-code-output-15");
+  const editorDiv = document.getElementById("webr-editor-15");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -6041,7 +6248,7 @@ sal_ca[["salary"]]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[ , 5]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -6232,17 +6439,17 @@ sal_ca[["salary"]]`,
 <p><em>Each of these options will return a data frame.</em></p>
 <p>Select one column by name.</p>
 <p><code>df[&quot;column name&quot;]</code></p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-15">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-16">Loading
   webR...</button>
-<div id="webr-editor-15"></div>
-<div id="webr-code-output-15" aria-live="assertive">
+<div id="webr-editor-16"></div>
+<div id="webr-code-output-16" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-15");
-  const outputDiv = document.getElementById("webr-code-output-15");
-  const editorDiv = document.getElementById("webr-editor-15");
+  const runButton = document.getElementById("webr-run-button-16");
+  const outputDiv = document.getElementById("webr-code-output-16");
+  const editorDiv = document.getElementById("webr-editor-16");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -6251,7 +6458,7 @@ sal_ca[["salary"]]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca["salary"]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -6438,17 +6645,17 @@ sal_ca[["salary"]]`,
 </script>
 <p>Select multiple columns by name.</p>
 <p><code>df[c(&quot;column name&quot;, &quot;column name&quot;, ...)]</code> or <code>df[, c(&quot;column name&quot;, &quot;column name&quot;, ...)]</code></p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-16">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-17">Loading
   webR...</button>
-<div id="webr-editor-16"></div>
-<div id="webr-code-output-16" aria-live="assertive">
+<div id="webr-editor-17"></div>
+<div id="webr-code-output-17" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-16");
-  const outputDiv = document.getElementById("webr-code-output-16");
-  const editorDiv = document.getElementById("webr-editor-16");
+  const runButton = document.getElementById("webr-run-button-17");
+  const outputDiv = document.getElementById("webr-code-output-17");
+  const editorDiv = document.getElementById("webr-editor-17");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -6457,7 +6664,7 @@ sal_ca[["salary"]]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[c('work_year', 'salary')]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -6643,17 +6850,17 @@ sal_ca[["salary"]]`,
   };
 </script>
 <p>Multiple columns, first saving vector of names into a variable.</p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-17">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-18">Loading
   webR...</button>
-<div id="webr-editor-17"></div>
-<div id="webr-code-output-17" aria-live="assertive">
+<div id="webr-editor-18"></div>
+<div id="webr-code-output-18" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-17");
-  const outputDiv = document.getElementById("webr-code-output-17");
-  const editorDiv = document.getElementById("webr-editor-17");
+  const runButton = document.getElementById("webr-run-button-18");
+  const outputDiv = document.getElementById("webr-code-output-18");
+  const editorDiv = document.getElementById("webr-editor-18");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -6662,8 +6869,7 @@ sal_ca[["salary"]]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `cols <- c('work_year', 'salary')
-sal_ca[cols]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -6850,17 +7056,17 @@ sal_ca[cols]`,
 </script>
 <p>Select one column by position.</p>
 <p><code>df[column number]</code></p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-18">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-19">Loading
   webR...</button>
-<div id="webr-editor-18"></div>
-<div id="webr-code-output-18" aria-live="assertive">
+<div id="webr-editor-19"></div>
+<div id="webr-code-output-19" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-18");
-  const outputDiv = document.getElementById("webr-code-output-18");
-  const editorDiv = document.getElementById("webr-editor-18");
+  const runButton = document.getElementById("webr-run-button-19");
+  const outputDiv = document.getElementById("webr-code-output-19");
+  const editorDiv = document.getElementById("webr-editor-19");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -6869,7 +7075,7 @@ sal_ca[cols]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[5]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -7056,17 +7262,17 @@ sal_ca[cols]`,
 </script>
 <p>Select multiple consecutive columns by position.</p>
 <p><code>df[column number:column number]</code></p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-19">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-20">Loading
   webR...</button>
-<div id="webr-editor-19"></div>
-<div id="webr-code-output-19" aria-live="assertive">
+<div id="webr-editor-20"></div>
+<div id="webr-code-output-20" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-19");
-  const outputDiv = document.getElementById("webr-code-output-19");
-  const editorDiv = document.getElementById("webr-editor-19");
+  const runButton = document.getElementById("webr-run-button-20");
+  const outputDiv = document.getElementById("webr-code-output-20");
+  const editorDiv = document.getElementById("webr-editor-20");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -7075,7 +7281,7 @@ sal_ca[cols]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[1:3]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -7266,17 +7472,17 @@ sal_ca[cols]`,
 <p><em>Each of these options will return a data frame.</em></p>
 <p>Select one row by position.</p>
 <p><code>df[row number, ]</code> - note the comma placement!</p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-20">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-21">Loading
   webR...</button>
-<div id="webr-editor-20"></div>
-<div id="webr-code-output-20" aria-live="assertive">
+<div id="webr-editor-21"></div>
+<div id="webr-code-output-21" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-20");
-  const outputDiv = document.getElementById("webr-code-output-20");
-  const editorDiv = document.getElementById("webr-editor-20");
+  const runButton = document.getElementById("webr-run-button-21");
+  const outputDiv = document.getElementById("webr-code-output-21");
+  const editorDiv = document.getElementById("webr-editor-21");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -7285,7 +7491,7 @@ sal_ca[cols]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[1, ]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -7472,17 +7678,17 @@ sal_ca[cols]`,
 </script>
 <p>Select multiple rows by position.</p>
 <p><code>df[row number:row number, ]</code> - note the comma placement!</p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-21">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-22">Loading
   webR...</button>
-<div id="webr-editor-21"></div>
-<div id="webr-code-output-21" aria-live="assertive">
+<div id="webr-editor-22"></div>
+<div id="webr-code-output-22" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-21");
-  const outputDiv = document.getElementById("webr-code-output-21");
-  const editorDiv = document.getElementById("webr-editor-21");
+  const runButton = document.getElementById("webr-run-button-22");
+  const outputDiv = document.getElementById("webr-code-output-22");
+  const editorDiv = document.getElementById("webr-editor-22");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -7491,7 +7697,7 @@ sal_ca[cols]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[1:5, ]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -7679,17 +7885,17 @@ sal_ca[cols]`,
 <p>Select multiple rows by using a criteria. What is a criteria? It is a logical statement that will be compared to every row of the data.</p>
 <p>Only rows that meet the criteria are returned.</p>
 <p>Example criteria: <code>work_year</code> equal to <code>2022</code>?</p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-22">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-23">Loading
   webR...</button>
-<div id="webr-editor-22"></div>
-<div id="webr-code-output-22" aria-live="assertive">
+<div id="webr-editor-23"></div>
+<div id="webr-code-output-23" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-22");
-  const outputDiv = document.getElementById("webr-code-output-22");
-  const editorDiv = document.getElementById("webr-editor-22");
+  const runButton = document.getElementById("webr-run-button-23");
+  const outputDiv = document.getElementById("webr-code-output-23");
+  const editorDiv = document.getElementById("webr-editor-23");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -7698,7 +7904,7 @@ sal_ca[cols]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca$work_year == 2022`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -7885,17 +8091,17 @@ sal_ca[cols]`,
 </script>
 <p>Now add the criteria to the data frame.</p>
 <p><code>df[row critera, ]</code> - note the comma placement!</p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-23">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-24">Loading
   webR...</button>
-<div id="webr-editor-23"></div>
-<div id="webr-code-output-23" aria-live="assertive">
+<div id="webr-editor-24"></div>
+<div id="webr-code-output-24" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-23");
-  const outputDiv = document.getElementById("webr-code-output-23");
-  const editorDiv = document.getElementById("webr-editor-23");
+  const runButton = document.getElementById("webr-run-button-24");
+  const outputDiv = document.getElementById("webr-code-output-24");
+  const editorDiv = document.getElementById("webr-editor-24");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -7904,7 +8110,7 @@ sal_ca[cols]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[sal_ca$work_year == 2021, ]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -8091,17 +8297,17 @@ sal_ca[cols]`,
 </script>
 <p>Another example criteria: Are there any missing values in <code>salary_in_usd</code>?</p>
 <p><code>is.na(df$columnname)</code></p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-24">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-25">Loading
   webR...</button>
-<div id="webr-editor-24"></div>
-<div id="webr-code-output-24" aria-live="assertive">
+<div id="webr-editor-25"></div>
+<div id="webr-code-output-25" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-24");
-  const outputDiv = document.getElementById("webr-code-output-24");
-  const editorDiv = document.getElementById("webr-editor-24");
+  const runButton = document.getElementById("webr-run-button-25");
+  const outputDiv = document.getElementById("webr-code-output-25");
+  const editorDiv = document.getElementById("webr-editor-25");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -8110,7 +8316,7 @@ sal_ca[cols]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `is.na(sal_ca$salary_in_usd)`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -8297,17 +8503,17 @@ sal_ca[cols]`,
 </script>
 <p>Now add the criteria to the data frame.</p>
 <p><code>df[row critera, ]</code> - note the comma placement!</p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-25">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-26">Loading
   webR...</button>
-<div id="webr-editor-25"></div>
-<div id="webr-code-output-25" aria-live="assertive">
+<div id="webr-editor-26"></div>
+<div id="webr-code-output-26" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-25");
-  const outputDiv = document.getElementById("webr-code-output-25");
-  const editorDiv = document.getElementById("webr-editor-25");
+  const runButton = document.getElementById("webr-run-button-26");
+  const outputDiv = document.getElementById("webr-code-output-26");
+  const editorDiv = document.getElementById("webr-editor-26");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -8316,7 +8522,7 @@ sal_ca[cols]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[is.na(sal_ca$salary_in_usd), ]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -8508,17 +8714,17 @@ sal_ca[cols]`,
 <p><code>df[row selection / criteria , column selection]</code></p>
 <section id="example-1-show-the-columns-job_title-and-salary_in_usd-for-full-time-employees." class="level4">
 <h4 class="anchored" data-anchor-id="example-1-show-the-columns-job_title-and-salary_in_usd-for-full-time-employees."><strong>Example 1</strong>: Show the columns <code>job_title</code> and <code>salary_in_usd</code> for full time employees.</h4>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-26">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-27">Loading
   webR...</button>
-<div id="webr-editor-26"></div>
-<div id="webr-code-output-26" aria-live="assertive">
+<div id="webr-editor-27"></div>
+<div id="webr-code-output-27" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-26");
-  const outputDiv = document.getElementById("webr-code-output-26");
-  const editorDiv = document.getElementById("webr-editor-26");
+  const runButton = document.getElementById("webr-run-button-27");
+  const outputDiv = document.getElementById("webr-code-output-27");
+  const editorDiv = document.getElementById("webr-editor-27");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -8527,7 +8733,7 @@ sal_ca[cols]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[sal_ca$employment_type == 'FT', c('job_title', 'salary_in_usd')]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -8715,17 +8921,17 @@ sal_ca[cols]`,
 </section>
 <section id="example-2-show-the-columns-job_title-and-salary_in_usd-for-salaries-greater-than-or-equal-to-100k." class="level4">
 <h4 class="anchored" data-anchor-id="example-2-show-the-columns-job_title-and-salary_in_usd-for-salaries-greater-than-or-equal-to-100k."><strong>Example 2</strong>: Show the columns <code>job_title</code> and <code>salary_in_usd</code> for salaries greater than or equal to $100k.</h4>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-27">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-28">Loading
   webR...</button>
-<div id="webr-editor-27"></div>
-<div id="webr-code-output-27" aria-live="assertive">
+<div id="webr-editor-28"></div>
+<div id="webr-code-output-28" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-27");
-  const outputDiv = document.getElementById("webr-code-output-27");
-  const editorDiv = document.getElementById("webr-editor-27");
+  const runButton = document.getElementById("webr-run-button-28");
+  const outputDiv = document.getElementById("webr-code-output-28");
+  const editorDiv = document.getElementById("webr-editor-28");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -8734,7 +8940,7 @@ sal_ca[cols]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[sal_ca$salary_in_usd >= 100000, c('job_title', 'salary_in_usd')]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -8920,17 +9126,17 @@ sal_ca[cols]`,
   };
 </script>
 <p>Oops, this doesn’t give what we need. Why are rows with blank (<code>NA</code>) salaries being returned? What does the criteria / logical statement return?</p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-28">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-29">Loading
   webR...</button>
-<div id="webr-editor-28"></div>
-<div id="webr-code-output-28" aria-live="assertive">
+<div id="webr-editor-29"></div>
+<div id="webr-code-output-29" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-28");
-  const outputDiv = document.getElementById("webr-code-output-28");
-  const editorDiv = document.getElementById("webr-editor-28");
+  const runButton = document.getElementById("webr-run-button-29");
+  const outputDiv = document.getElementById("webr-code-output-29");
+  const editorDiv = document.getElementById("webr-editor-29");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -8939,7 +9145,7 @@ sal_ca[cols]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca$salary_in_usd >= 100000`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -9125,17 +9331,17 @@ sal_ca[cols]`,
   };
 </script>
 <p>Let’s add an exclusion for <code>NA</code> salaries in the criteria. Note the use of <code>&amp;</code> to combine two logical statements.</p>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-29">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-30">Loading
   webR...</button>
-<div id="webr-editor-29"></div>
-<div id="webr-code-output-29" aria-live="assertive">
+<div id="webr-editor-30"></div>
+<div id="webr-code-output-30" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-29");
-  const outputDiv = document.getElementById("webr-code-output-29");
-  const editorDiv = document.getElementById("webr-editor-29");
+  const runButton = document.getElementById("webr-run-button-30");
+  const outputDiv = document.getElementById("webr-code-output-30");
+  const editorDiv = document.getElementById("webr-editor-30");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -9144,7 +9350,7 @@ sal_ca[cols]`,
   let editor;
   require(['vs/editor/editor.main'], function () {
     editor = monaco.editor.create(editorDiv, {
-      value: `sal_ca[sal_ca$salary_in_usd >= 100000 & !is.na(sal_ca$salary_in_usd), c('job_title', 'salary_in_usd')]`,
+      value: ``,
       language: 'r',
       theme: 'vs-light',
       automaticLayout: true,           // TODO: Could be problematic for slide decks
@@ -9369,17 +9575,17 @@ sal_ca[cols]`,
 </tr>
 </tbody>
 </table>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-30">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-31">Loading
   webR...</button>
-<div id="webr-editor-30"></div>
-<div id="webr-code-output-30" aria-live="assertive">
+<div id="webr-editor-31"></div>
+<div id="webr-code-output-31" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-30");
-  const outputDiv = document.getElementById("webr-code-output-30");
-  const editorDiv = document.getElementById("webr-editor-30");
+  const runButton = document.getElementById("webr-run-button-31");
+  const outputDiv = document.getElementById("webr-code-output-31");
+  const editorDiv = document.getElementById("webr-editor-31");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
@@ -9573,17 +9779,17 @@ sal_ca[cols]`,
     executeCode(editor.getValue());
   };
 </script>
-<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-31">Loading
+<button class="btn btn-default btn-webr" disabled type="button" id="webr-run-button-32">Loading
   webR...</button>
-<div id="webr-editor-31"></div>
-<div id="webr-code-output-31" aria-live="assertive">
+<div id="webr-editor-32"></div>
+<div id="webr-code-output-32" aria-live="assertive">
   <pre style="visibility: hidden"></pre>
 </div>
 <script type="module">
   // Retrieve webR code cell information
-  const runButton = document.getElementById("webr-run-button-31");
-  const outputDiv = document.getElementById("webr-code-output-31");
-  const editorDiv = document.getElementById("webr-editor-31");
+  const runButton = document.getElementById("webr-run-button-32");
+  const outputDiv = document.getElementById("webr-code-output-32");
+  const editorDiv = document.getElementById("webr-editor-32");
 
   // Add a light grey outline around the code editor
   editorDiv.style.border = "1px solid #eee";
