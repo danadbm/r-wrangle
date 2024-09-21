@@ -1,0 +1,153 @@
+---
+title: "R Intro"
+format: 
+  live-html:
+    self-contained: true
+engine: knitr
+toc: true
+toc-location: left
+theme: pulse
+---
+
+
+{{< include ./_extensions/r-wasm/live/_knitr.qmd >}}
+
+## Variables
+
+A variable can store any data type (e.g. numeric, character, date, logical) or object (e.g. functions, vectors, plots).
+
+
+```{webr-r}
+# assign variable using the `<-` operator (preferred)
+x <- 5
+x
+```
+
+
+```{webr-r}
+# assign variable using the `=` operator
+y = 2
+y
+```
+
+
+```{webr-r}
+z <- x^y
+z
+```
+
+Remove a variable from the environment with the function `rm`.
+
+
+```{webr-r}
+z
+```
+
+```{webr-r}
+#| echo: true
+rm(z)
+z
+```
+
+## Vectors
+
+A `vector` is a collection of elements [of the same type]{.underline}. Operations can be applied to each element of the vector automatically.
+
+
+```{webr-r}
+my_vector <- c(1, 2, 3, 4, 5)
+my_vector
+```
+
+
+```{webr-r}
+my_vector * 2
+```
+
+
+Generate a sequence using the `:` operator.
+
+
+```{webr-r}
+my_sequence <- -5:15
+my_sequence
+```
+
+
+```{webr-r}
+my_sequence <= 10
+```
+
+
+## Data Types
+
+4 main types: `numeric`, `character`, Date/POSIXct, and `logical`
+
+| Data Type                 | Description                                    | Examples                                         |
+|------------------|---------------------------|---------------------------|
+| **numeric**               | integers, decimals, positive, negative numbers | 500, 3.4, -6, 0                                  |
+| **character (or factor)** | text data; factor data types have "levels"     | "Hello world", c("agree", "disagree", "neutral") |
+
+
+| Data Type   | Description                                            | Examples                                                 | Helper Functions                                                                |
+|------------------|------------------|------------------|-------------------|
+| **dates**   | date or POSIXct (date & time)                          | "2019-01-25", "June 20 2007", "Fri Sep 16 21:07:56 2022" | `Sys.Date`, `date`, `as.Date`, `format`, functions from the `lubridate` package |
+| **logical** | true or false (true = 1 and false = 0 in numeric form) | 2 == 3, 6 != 5, 2 \< 3                                   | `is.logical`                                                                    |
+
+Reveal the data type of any variable using the `class` function.
+
+
+```{webr-r}
+class(86)
+```
+
+
+```{webr-r}
+class("Hello DAPT class")
+```
+
+## Factor Vectors
+
+Factors are vectors used to work with categorical variables and have a known and fixed set of values.
+
+```{webr-r}
+months <- c('Mar', 'Feb', 'Jan')
+class(months)
+```
+
+
+What does it look like if we sort this character vector?
+
+
+```{webr-r}
+sort(months)
+```
+
+
+```{webr-r}
+months <- as.factor(months)
+levels(months)
+```
+
+The **levels** are an attribute of factors that define all possible elements and can define the order.
+
+```{webr-r}
+levels(months) <- c('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+sort(months)
+```
+
+## Functions
+
+Functions automate tasks and make code repeatable. So far, we've used several base R functions like `class`, `as.factor`, and `sort`.
+
+Structure:
+
+#### function_name(arguments)
+
+where arguments pass the function the needed information in order to complete the function's task. Note: not all functions need arguments (e.g. `getwd()` )
+
+#### ?function
+
+Get help or documentation on a function using the `?` operator.
+
+
