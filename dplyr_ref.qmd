@@ -1,6 +1,5 @@
 ---
 title: "R Data Wrangling: dplyr"
-author: DAPT 621 Intro to R
 format:
   html: 
     self-contained: true
@@ -73,13 +72,16 @@ salsub %>% select(salary)
 Select the `work_year`, `experience_level`, `salary_currency`, and `salary` columns.
 
 ```{r}
-# insert code here
+salsub %>%
+    select(work_year, experience_level, salary_currency, salary)
 ```
 
-Select the `work_year`, `experience_level`, `salary_currency`, and `salary` columns and then show only the first 5 rows.
+Select the `work_year`, `experience_level`, `salary_currency`, and `salary` columns and then show only the first 6 rows.
 
 ```{r}
-# insert code here
+salsub %>%
+    select(work_year, experience_level, salary_currency, salary) %>%
+    head()
 ```
 
 ## Filter
@@ -109,19 +111,22 @@ salsub %>% filter(company_location %in% c('US', 'AU'))
 Filter the data to show rows where `experience_level` is equal to senior level **AND** `salary_in_usd` is greater than $100k.
 
 ```{r}
-# insert code here
+salsub %>%
+    filter(experience_level == 'SE' & salary_in_usd > 100000)
 ```
 
 Filter the data to show rows where `experience_level` is equal to senior level **OR** `salary_in_usd` is greater than $100k.
 
 ```{r}
-# insert code here
+salsub %>%
+    filter(experience_level == 'SE' | salary_in_usd > 100000)
 ```
 
 Filter the data to show the rows where `salary_in_usd` is blank (i.e. is `NA`).
 
 ```{r}
-# insert code here
+salsub %>%
+    filter(is.na(salary_in_usd))
 ```
 
 ## Arrange
@@ -143,7 +148,10 @@ salsub %>% arrange(desc(salary))
 Filter the data where `salary_currency` is equal to `USD`, arrange `salary` in descending order, and select only the `work_year`, `job_title`, `salary` columns.
 
 ```{r}
-# insert code here
+salsub %>%
+    filter(salary_currency == 'USD') %>%
+    arrange(desc(salary)) %>%
+    select(work_year, job_title, salary)
 ```
 
 
@@ -179,10 +187,12 @@ salsub %>%
 
 ### Exercise
 
-Create a new column, `USD_or_not`, that shows "Yes" if `salary_currency` is equal to `USD` and "No" for all other currencies. 
+Create a new column, `USD_or_not`, that shows "Yes" if `salary_currency` is equal to `USD` and "No" for all other currencies. Select the salary, salary_currency, and USD_or_not columns.
 
 ```{r}
-# insert code here
+salsub %>%
+    mutate(USD_or_not = ifelse(salary_currency == "USD", "Yes", "No")) %>%
+    select(salary, salary_currency, USD_or_not)
 ```
 
 
@@ -222,5 +232,8 @@ sal %>%
 Find the average salary using the `sal` dataset where `salary_currency` is equal to `USD` and grouping by `work_year`.
 
 ```{r}
-# insert code here
+sal %>%                                                            
+    filter(salary_currency == 'USD') %>%                           
+    group_by(work_year) %>%                                        
+    summarise(avg_usd_salary = mean(salary))  
 ```

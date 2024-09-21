@@ -1,6 +1,5 @@
 # ---
 # R Data Wrangling: dplyr
-# DAPT 621 Intro to R
 # ---
 #
 # # Business Scenario

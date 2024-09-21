@@ -1,6 +1,5 @@
 # ---
 # R Exploratory Data Analysis"
-# DAPT 621 Intro to R
 # ---
 #
 # # Business Scenario
@@ -46,7 +45,7 @@ sal <- read.csv(filepath)
 #
 # # head
 #
-# Notice that 5 rows are returned if no number of rows is specified. Try `head(sal, 10)` to see the first 10 rows.
+# Notice that 6 rows are returned if no number of rows is specified. Try `head(sal, 10)` to see the first 10 rows.
 #
 #
 
@@ -56,7 +55,7 @@ head(sal, 2)
 #
 # # tail
 #
-# Check the last 5 rows of the data with the `tail()` function.
+# Check the last 6 rows of the data with the `tail()` function.
 #
 #
 
@@ -64,7 +63,7 @@ tail(sal)
 
 #
 #
-# How did R know to return exactly 5 rows?
+# How did R know to return exactly 6 rows?
 #
 # # Explore the data frame
 #
@@ -274,11 +273,11 @@ sal_ca[1:5, ]
 #
 # Only rows that meet the criteria are returned.
 #
-# Example criteria: `work_year` equal to `2022`?
+# Example criteria: `work_year` equal to `2020`?
 #
 #
 
-sal_ca$work_year == 2022
+sal_ca$work_year == 2020
 
 #
 #
@@ -350,7 +349,7 @@ sal_ca[sal_ca$salary_in_usd >= 100000 & !is.na(sal_ca$salary_in_usd), c('job_tit
 
 #
 #
-# # **Exercise**: Create a subset of the salary data that shows only entry level employees from mid-size companies and only the `experience_level`, `job_title`, `company_size`, and `salary_in_usd` columns and save as a new data frame, `sal_ca_en`.
+# # **Exercise**: Create a subset of the Canadian salary data that shows only entry level employees from mid-size companies and only the `experience_level`, `job_title`, `company_size`, and `salary_in_usd` columns.
 #
 # | `experience_level` | `job_title`    | `company_size` | `salary_in_usd`  |
 # |--------------------|----------------|----------------------|------------------|
@@ -358,17 +357,20 @@ sal_ca[sal_ca$salary_in_usd >= 100000 & !is.na(sal_ca$salary_in_usd), c('job_tit
 # | EN                 | Data Analyst   | M                   | ...              |
 # | ...                | ...            | ...                  | ...              |
 #
-# : sal_ca_en
 #
 #
 
-# insert code to save new data frame here
+# insert code to create a subset here
 
 #
 #
 #
 
-# insert code to view data frame here
+
+
+# # **Exercise**: Show the records in the salary data, `sal`, that have blank `salary_in_usd` values in 2020.
+#
+# insert code to show the blank salary records here
 
 #
 #

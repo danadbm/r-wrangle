@@ -1,6 +1,5 @@
 ---
 title: "R Exploratory Data Analysis"
-author: DAPT 621 Intro to R
 format:
   html: 
     self-contained: true
@@ -48,7 +47,7 @@ sal <- read.csv(filepath)
 
 ### head
 
-Notice that 5 rows are returned if no number of rows is specified. Try `head(sal, 10)` to see the first 10 rows.
+Notice that 6 rows are returned if no number of rows is specified. Try `head(sal, 10)` to see the first 10 rows.
 
 ```{r}
 head(sal, 2)
@@ -56,13 +55,13 @@ head(sal, 2)
 
 ### tail
 
-Check the last 5 rows of the data with the `tail()` function.
+Check the last 6 rows of the data with the `tail()` function.
 
 ```{r}
 tail(sal)
 ```
 
-How did R know to return exactly 5 rows?
+How did R know to return exactly 6 rows?
 
 ## Explore the data frame
 
@@ -234,10 +233,10 @@ Select multiple rows by using a criteria. What is a criteria? It is a logical st
 
 Only rows that meet the criteria are returned.
 
-Example criteria: `work_year` equal to `2022`?
+Example criteria: `work_year` equal to `2020`?
 
 ```{r}
-sal_ca$work_year == 2022
+sal_ca$work_year == 2020
 ```
 
 Now add the criteria to the data frame.
@@ -245,7 +244,7 @@ Now add the criteria to the data frame.
 `df[row critera, ]` - note the comma placement!
 
 ```{r}
-sal_ca[sal_ca$work_year == 2021, ]
+sal_ca[sal_ca$work_year == 2020, ]
 ```
 
 Another example criteria: Are there any missing values in `salary_in_usd`?
@@ -294,7 +293,7 @@ Let's add an exclusion for `NA` salaries in the criteria. Note the use of `&` to
 sal_ca[sal_ca$salary_in_usd >= 100000 & !is.na(sal_ca$salary_in_usd), c('job_title', 'salary_in_usd')]
 ```
 
-#### **Exercise**: Create a subset of the salary data that shows only entry level employees from mid-size companies and only the `experience_level`, `job_title`, `company_size`, and `salary_in_usd` columns and save as a new data frame, `sal_ca_en`.
+#### **Exercise**: Create a subset of the Canadian salary data that shows only entry level employees from mid-size companies and only the `experience_level`, `job_title`, `company_size`, and `salary_in_usd` columns.
 
 | `experience_level` | `job_title`    | `company_size` | `salary_in_usd`  |
 |--------------------|----------------|----------------------|------------------|
@@ -302,12 +301,15 @@ sal_ca[sal_ca$salary_in_usd >= 100000 & !is.na(sal_ca$salary_in_usd), c('job_tit
 | EN                 | Data Analyst   | M                   | ...              |
 | ...                | ...            | ...                  | ...              |
 
-: sal_ca_en
+: Entry level Canadian employees at mid-size companies
 
 ```{r}
-# insert code to save new data frame here
+sal_ca[sal_ca$experience_level == 'EN' & sal_ca$company_size == 'M', c('experience_level', 'job_title', 'company_size', 'salary_in_usd')]
 ```
 
+
+#### **Exercise**: Show the records in the salary data, `sal`, that have blank `salary_in_usd` values in 2020.
+
 ```{r}
-# insert code to view data frame here
+sal[is.na(sal$salary_in_usd) & sal$work_year == 2020, ]
 ```

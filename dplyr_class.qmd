@@ -1,14 +1,11 @@
 ---
 title: "R Data Wrangling: dplyr"
-author: DAPT 621 Intro to R
 format:
-  html: 
+  live-html: 
     self-contained: true
 toc: true
 toc-location: left
 theme: pulse
-filters:
-  - webr
 webr:
   packages: ['dplyr']
 ---
@@ -64,7 +61,7 @@ Select the salary using the `select()` function in the `dplyr` package. Note tha
 
 ```
 
-Use piping (`%>%`) to select the `salary` column. Piping will take the first argument (which is a data frame) and "pipe" it into the function.
+Use piping (`%>%` or `|>`) to select the `salary` column. Piping will take the first argument (which is a data frame) and "pipe" it into the function.
 
 *TIP: Use the keys `Ctrl` + `Shift` + `M` to create the pipe, `%>%`*
 
@@ -72,19 +69,68 @@ Use piping (`%>%`) to select the `salary` column. Piping will take the first arg
 
 ```
 
-### Exercise
+### Exercise 1
 
 Select the `work_year`, `experience_level`, `salary_currency`, and `salary` columns.
 
 ```{webr-r}
-# insert code here
+#| exercise: ex_1
+
 ```
 
-Select the `work_year`, `experience_level`, `salary_currency`, and `salary` columns and then show only the first 5 rows.
+::: { .solution exercise="ex_1" }
+::: { .callout-tip collapse="false"}
+## Solution:
+
+```r
+salsub %>%                                                             #<1>
+    select(work_year, experience_level, salary_currency, salary)    #<2>
+```
+1. Start with the data frame, `salsub`, and pipe `%>%` to the next function.
+2. Select the appropriate columns. Note that unlike in base R, `salsub$` before the column name is not needed. Why? `salsub` was "piped" into the first argument of the `select()` function.
+
+Alternative solution:
+
+```r
+select(salsub, work_year, experience_level, salary_currency, salary)
+```
+This solution does not use a pipe, so the data frame `salsub` must be specified in the first argument.
+
+:::
+:::
+
+### Exercise 2
+
+Select the `work_year`, `experience_level`, `salary_currency`, and `salary` columns and then show only the first 6 rows.
 
 ```{webr-r}
-# insert code here
+#| exercise: ex_2
+
 ```
+
+
+::: { .solution exercise="ex_2" }
+::: { .callout-tip collapse="false"}
+## Solution:
+
+```r
+salsub %>%                                                              #<1>
+    select(work_year, experience_level, salary_currency, salary) %>%    #<2>
+    head()                                                              #<3>
+```
+1. Start with the data frame, `salsub`, and pipe `%>%` to the next function.
+2. Select the appropriate columns.
+3. Return only the first 6 rows with the `head()` function. Why is it unnecessary to specify 6?
+
+Alternative solution:
+
+```r
+head(select(salsub, work_year, experience_level, salary_currency, salary))
+```
+This solution does not use a pipe, so the data frame `salsub` must be specified in the first argument. Notice that the most recent function calls surround the prior function calls.
+
+:::
+:::
 
 ## Filter
 
@@ -108,25 +154,81 @@ Change the filter to include company locations of either `US` or `AU` using the 
 
 *Tip: To add multiple filter conditions separate with `&` for requiring both conditions to be met or `|` to require at least one of the conditions to be met.*
 
-### Exercise
+### Exercise 3
 
 Filter the data to show rows where `experience_level` is equal to senior level **AND** `salary_in_usd` is greater than $100k.
 
 ```{webr-r}
-# insert code here
+#| exercise: ex_3
+
 ```
+
+
+::: { .solution exercise="ex_3" }
+::: { .callout-tip collapse="false"}
+## Solution:
+
+```r
+salsub %>%                                                              #<1>
+    filter(experience_level == 'SE' & salary_in_usd > 100000)           #<2>
+```
+1. Start with the data frame, `salsub`, and pipe `%>%` to the next function.
+2. Filter on `experience_level` and `salary_in_usd`.
+
+
+:::
+:::
+
+### Exercise 4
 
 Filter the data to show rows where `experience_level` is equal to senior level **OR** `salary_in_usd` is greater than $100k.
 
 ```{webr-r}
-# insert code here
+#| exercise: ex_4
+
 ```
+
+
+::: { .solution exercise="ex_4" }
+::: { .callout-tip collapse="false"}
+## Solution:
+
+```r
+salsub %>%                                                              #<1>
+    filter(experience_level == 'SE' | salary_in_usd > 100000)           #<2>
+```
+1. Start with the data frame, `salsub`, and pipe `%>%` to the next function.
+2. Filter on `experience_level` or `salary_in_usd`.
+
+
+:::
+:::
+
+### Exercise 5
 
 Filter the data to show the rows where `salary_in_usd` is blank (i.e. is `NA`).
 
 ```{webr-r}
-# insert code here
+#| exercise: ex_5
+
 ```
+
+
+::: { .solution exercise="ex_5" }
+::: { .callout-tip collapse="false"}
+## Solution:
+
+```r
+salsub %>%                                                              #<1>
+    filter(is.na(salary_in_usd))                                        #<2>
+```
+1. Start with the data frame, `salsub`, and pipe `%>%` to the next function.
+2. Filter where `salary_in_usd` is blank using the `is.na()` function.
+
+
+:::
+:::
+
 
 ## Arrange
 
@@ -142,14 +244,35 @@ Descending:
 
 ```
 
-### Exercise
+
+### Exercise 6
 
 Filter the data where `salary_currency` is equal to `USD`, arrange `salary` in descending order, and select only the `work_year`, `job_title`, `salary` columns.
 
 ```{webr-r}
-# insert code here
+#| exercise: ex_6
+
 ```
 
+
+::: { .solution exercise="ex_6" }
+::: { .callout-tip collapse="false"}
+## Solution:
+
+```r
+salsub %>%                                                              #<1>
+    filter(salary_currency == 'USD') %>%                                #<2>
+    arrange(desc(salary)) %>%                                           #<3>
+    select(work_year, job_title, salary)                                #<4>
+```
+1. Start with the data frame, `salsub`, and pipe `%>%` to the next function.
+2. Filter where `salary_currence` is equal to `USD`.
+3. Arrange `salary` in descending order.
+4. Select appropriate columns.
+
+
+:::
+:::
 
 ## Mutate
 
@@ -170,14 +293,31 @@ Create a new column based on a case when statement.
 
 ```
 
-### Exercise
+### Exercise 7
 
-Create a new column, `USD_or_not`, that shows "Yes" if `salary_currency` is equal to `USD` and "No" for all other currencies. 
+Create a new column, `USD_or_not`, that shows "Yes" if `salary_currency` is equal to `USD` and "No" for all other currencies. Select the `salary`, `salary_currency`, and `USD_or_not` columns.
 
 ```{webr-r}
-# insert code here
+#| exercise: ex_7
+
 ```
 
+
+::: { .solution exercise="ex_7" }
+::: { .callout-tip collapse="false"}
+## Solution:
+
+```r
+salsub %>%                                                                  #<1>
+    mutate(USD_or_not = ifelse(salary_currency == "USD", "Yes", "No")) %>%  #<2>
+    select(salary, salary_currency, USD_or_not)                             #<3>
+```
+1. Start with the data frame, `salsub`, and pipe `%>%` to the next function.
+2. Create a new column using an `ifelse` statement.
+3. Select appropriate columns.
+
+:::
+:::
 
 ## Summarize
 
@@ -200,10 +340,30 @@ Let's look at the average salaries for each currency and the number of rows in e
 
 ```
 
-### Exercise
+### Exercise 8
 
 Find the average salary using the `sal` dataset where `salary_currency` is equal to `USD` and grouping by `work_year`.
 
 ```{webr-r}
-# insert code here
+#| exercise: ex_8
+
 ```
+
+
+::: { .solution exercise="ex_8" }
+::: { .callout-tip collapse="false"}
+## Solution:
+
+```r
+sal %>%                                                            #<1>
+    filter(salary_currency == 'USD') %>%                            #<2>
+    group_by(work_year) %>%                                         #<3>
+    summarise(avg_usd_salary = mean(salary))                        #<4>
+```
+1. Start with the data frame, `sal`, and pipe `%>%` to the next function.
+2. Filter on `USD` salaries.
+3. Group by `work_year`.
+4. Find the average `salary`. 
+
+:::
+:::

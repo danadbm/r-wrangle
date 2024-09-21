@@ -1,15 +1,16 @@
 ---
 title: "R Exploratory Data Analysis"
-author: DAPT 621 Intro to R
-format:
-  html: 
+format: 
+  live-html:
     self-contained: true
+engine: knitr
 toc: true
 toc-location: left
 theme: pulse
-filters:
-  - webr
 ---
+
+
+{{< include ./_extensions/r-wasm/live/_knitr.qmd >}}
 
 ## Business Scenario
 
@@ -18,7 +19,7 @@ Suppose you are a data consultant recently hired by Company ABC, a mid-size comp
 ## Data Overview
 
 | Column             | Description                                                                                                                                                                                    |
-|------------------------|------------------------------------------------|
+|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | work_year          | The year the salary was paid.                                                                                                                                                                  |
 | experience_level   | The experience level in the job during the year with the following possible values: EN Entry-level / Junior MI Mid-level / Intermediate SE Senior-level / Expert EX Executive-level / Director |
 | employment_type    | The type of employment for the role: PT Part-time FT Full-time CT Contract FL Freelance                                                                                                        |
@@ -50,7 +51,7 @@ sal <- read.csv(filepath)
 
 ### head
 
-Notice that 5 rows are returned if no number of rows is specified. Try `head(sal, 10)` to see the first 10 rows.
+Notice that 6 rows are returned if no number of rows is specified. Try `head(sal, 10)` to see the first 10 rows.
 
 ```{webr-r}
 
@@ -58,13 +59,13 @@ Notice that 5 rows are returned if no number of rows is specified. Try `head(sal
 
 ### tail
 
-Check the last 5 rows of the data with the `tail()` function.
+Check the last 6 rows of the data with the `tail()` function.
 
 ```{webr-r}
 
 ```
 
-How did R know to return exactly 5 rows?
+How did R know to return exactly 6 rows?
 
 ## Explore the data frame
 
@@ -108,7 +109,6 @@ Use the `summary` function to see summary statistics for each column.
 
 ```
 
-
 ### names
 
 Use the `names` function to see the column names in the data frame.
@@ -117,14 +117,14 @@ Use the `names` function to see the column names in the data frame.
 
 ```
 
-
 ## Access elements in the data frame (`df`) using base R
 
 It is good to understand how data can be accessed in a data frame using base R syntax; however, it is more common to use libraries like `dplyr` and `data.table`. `dplyr` will be the focus after reviewing base R syntax.
 
-**For the purposes of this demo, we will look at only a subset of the original data and focus on Canadian employees only (`employee_residence == 'CA'`).** 
+**For the purposes of this demo, we will look at only a subset of the original data and focus on Canadian employees only (`employee_residence == 'CA'`).**
 
 The code `sal_ca <- sal[sal$employee_residence == 'CA', ]` will create a new data frame, `sal_ca` that is limited to the Canadian employees.
+
 ```{webr-r}
 sal_ca <- sal[sal$employee_residence == 'CA', ]
 ```
@@ -234,7 +234,7 @@ Select multiple rows by using a criteria. What is a criteria? It is a logical st
 
 Only rows that meet the criteria are returned.
 
-Example criteria: `work_year` equal to `2022`?
+Example criteria: `work_year` equal to `2020`?
 
 ```{webr-r}
 
@@ -294,20 +294,63 @@ Let's add an exclusion for `NA` salaries in the criteria. Note the use of `&` to
 
 ```
 
-#### **Exercise**: Create a subset of the salary data that shows only entry level employees from mid-size companies and only the `experience_level`, `job_title`, `company_size`, and `salary_in_usd` columns and save as a new data frame, `sal_ca_en`.
+#### **Exercise**: Create a subset of the Canadian salary data, `sal_ca`, that shows only entry level employees from mid-size companies and only the `experience_level`, `job_title`, `company_size`, and `salary_in_usd` columns.
 
-| `experience_level` | `job_title`    | `company_size` | `salary_in_usd`  |
-|--------------------|----------------|----------------------|------------------|
-| EN                 | Data Scientist | M                   | ...              |
-| EN                 | Data Analyst   | M                   | ...              |
-| ...                | ...            | ...                  | ...              |
+| `experience_level` | `job_title`    | `company_size` | `salary_in_usd` |
+|--------------------|----------------|----------------|-----------------|
+| EN                 | Data Scientist | M              | ...             |
+| EN                 | Data Analyst   | M              | ...             |
+| ...                | ...            | ...            | ...             |
 
-: sal_ca_en
-
-```{webr-r}
-# insert code to save new data frame here
-```
+: Entry level Canadian employees at mid-size companies
 
 ```{webr-r}
-# insert code to view data frame here
+#| exercise: ex_1
+sal_ca[______ , ______]
 ```
+
+::: { .solution exercise="ex_1" }
+::: { .callout-tip collapse="false"}
+## Solution:
+
+```r
+sal_ca[
+        sal_ca$experience_level == 'EN'                                     #<1> 
+        & sal_ca$company_size == 'M'                                        #<2>
+        , 
+        c('experience_level', 'job_title', 'company_size', 'salary_in_usd') #<3>
+        ]
+```
+1. Filter on `experience_level` equal to entry level or `EN` in the data.
+2. AND (specify with `&`) filter on `company_size` equal to mid-size or `M` in the data.
+3. Select columns to the right of the `,` in a vector `c()`.
+
+
+:::
+:::
+
+#### **Exercise**: Show the records in the salary data, `sal`, that have blank `salary_in_usd` values in 2020.
+
+```{webr-r}
+#| exercise: ex_2
+sal[______]
+```
+
+::: { .solution exercise="ex_2" }
+::: { .callout-tip collapse="false"}
+## Solution:
+
+```r
+sal[
+        is.na(sal$salary_in_usd)                         #<1> 
+        & sal$work_year == 2020                          #<2>
+        ,                                                #<3>
+        ]
+```
+1. Filter where `salary_in_usd` is blank.
+2. AND (specify with `&`) filter on `work_year` equal to `2020`. Notice that `2020` does not need to be in quotes because it is a numeric value. Note the `==` instead of `=` when using a logical statement as a filtering criteria.
+3. Select all columns by leaving blank after the `,`.
+
+
+:::
+:::
